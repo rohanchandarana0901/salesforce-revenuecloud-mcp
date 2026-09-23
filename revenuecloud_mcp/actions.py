@@ -1,6 +1,6 @@
 """Revenue Cloud action registry derived from the local guide and source image."""
 
-DEFAULT_API_VERSION = "65.0"
+DEFAULT_API_VERSION = "latest"
 DEFAULT_TARGET_ORG = None
 
 TARGET_ORG_DESCRIPTION = (
@@ -812,7 +812,7 @@ def action_input_schema(name):
         },
         "api_version": {
             "type": "string",
-            "description": "Salesforce API version without leading v. Defaults to the target org API version reported by Salesforce CLI.",
+            "description": "Salesforce API version without leading v, or latest (default).",
         },
         "validate_only": {
             "type": "boolean",

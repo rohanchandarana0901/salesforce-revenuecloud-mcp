@@ -35,7 +35,7 @@ def base_salesforce_schema(extra):
             "type": "string",
             "description": TARGET_ORG_DESCRIPTION,
         },
-        "api_version": {"type": "string", "description": "Salesforce API version without leading v."},
+        "api_version": {"type": "string", "description": "Salesforce API version without leading v, or latest (default)."},
     }
     props.update(extra)
     return {"type": "object", "properties": props, "additionalProperties": False}
@@ -122,7 +122,7 @@ def _all_tools():
             base_salesforce_schema(
                 {
                     "method": {"type": "string", "enum": ["GET", "POST", "PATCH", "DELETE"]},
-                    "path": {"type": "string", "description": "Relative path such as query or /services/data/v65.0/query."},
+                    "path": {"type": "string", "description": "Relative path such as query or /services/data/latest/query."},
                     "body": {"type": "object"},
                     "query": {"type": "object", "additionalProperties": True},
                 }
@@ -333,7 +333,7 @@ def call_tool(name, args, config=None):
             "version": SERVER_VERSION,
             "defaults": {
                 "target_org": "SALESFORCE_TARGET_ORG or SF_TARGET_ORG",
-                "api_version": "target org default, fallback 65.0",
+                "api_version": "latest (pass e.g. 66.0 to pin)",
             },
             "filter": {
                 "toolsets": config.get("toolsets") or [],
@@ -480,7 +480,7 @@ def call_tool(name, args, config=None):
             "status": standard_actions.get("status"),
             "targetOrg": standard_actions.get("targetOrg"),
             "username": standard_actions.get("username"),
-            "apiVersion": args.get("api_version") or "target org default",
+            "apiVersion": args.get("api_version") or "latest",
             "summary": {
                 "registered_action_tools": len(action_results),
                 "available_action_tools": len([item for item in action_results if item["available_in_org"]]),

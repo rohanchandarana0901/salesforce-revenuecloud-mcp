@@ -20,6 +20,12 @@ def _clean_version(api_version):
     return version[1:] if version.startswith("v") else version
 
 
+def _version_segment(api_version):
+    # "latest" is a valid /services/data/ segment; numeric versions need the "v" prefix.
+    version = _clean_version(api_version)
+    return "latest" if version.lower() == "latest" else "v" + version
+
+
 def resolve_target_org(target_org=None):
     is_default = not target_org
     org = target_org or os.environ.get("SALESFORCE_TARGET_ORG") or os.environ.get("SF_TARGET_ORG") or DEFAULT_TARGET_ORG
@@ -90,9 +96,9 @@ def get_connection(target_org=None):
 
 def rest_request(method, path, body=None, query=None, target_org=None, api_version=None):
     conn = get_connection(target_org)
-    version = _clean_version(api_version or conn.get("apiVersion") or DEFAULT_API_VERSION)
+    segment = _version_segment(api_version or DEFAULT_API_VERSION)
     if not path.startswith("/"):
-        path = "/services/data/v%s/%s" % (version, path)
+        path = "/services/data/%s/%s" % (segment, path)
     if not path.startswith("/services/data/"):
         raise SalesforceError("Only Salesforce /services/data REST paths are allowed.")
 
@@ -141,7 +147,7 @@ def rest_request(method, path, body=None, query=None, target_org=None, api_versi
 
 def action_path(action_name, api_version=None):
     if api_version:
-        return "/services/data/v%s/actions/standard/%s" % (_clean_version(api_version), action_name)
+        return "/services/data/%s/actions/standard/%s" % (_version_segment(api_version), action_name)
     return "actions/standard/%s" % action_name
 
 
