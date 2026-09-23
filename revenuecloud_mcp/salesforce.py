@@ -54,19 +54,34 @@ def get_connection(target_org=None):
         }
 
     org = resolve_target_org(target_org)
+    cli_env = dict(os.environ, NO_COLOR="1", FORCE_COLOR="0", SF_NO_COLOR="1")
     cmd = ["sf", "org", "display", "--target-org", org, "--json"]
-    proc = subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.run(cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=cli_env)
     if proc.returncode != 0:
         raise SalesforceError("Salesforce CLI auth failed for %s: %s%s" % (org, proc.stderr, proc.stdout))
     try:
         result = json.loads(proc.stdout)["result"]
     except Exception as exc:
         raise SalesforceError("Unable to parse Salesforce CLI org display output: %s" % exc)
+
+    access_token = result.get("accessToken") or ""
+    if not access_token or access_token.startswith("[REDACTED"):
+        token_cmd = ["sf", "org", "auth", "show-access-token", "--target-org", org, "--json"]
+        token_proc = subprocess.run(token_cmd, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=cli_env)
+        if token_proc.returncode != 0:
+            raise SalesforceError(
+                "Salesforce CLI access-token retrieval failed for %s: %s%s" % (org, token_proc.stderr, token_proc.stdout)
+            )
+        try:
+            access_token = json.loads(token_proc.stdout)["result"]["accessToken"]
+        except Exception as exc:
+            raise SalesforceError("Unable to parse Salesforce CLI access-token output: %s" % exc)
+
     return {
         "targetOrg": org,
         "username": result.get("username"),
         "instanceUrl": result["instanceUrl"].rstrip("/"),
-        "accessToken": result["accessToken"],
+        "accessToken": access_token,
         "apiVersion": result.get("apiVersion"),
         "connectedStatus": result.get("connectedStatus"),
         "alias": result.get("alias"),
